@@ -135,7 +135,6 @@
       </form>
     </section>
   </div>
-
 <script>
   const API_URL = "https://my-chatbot-api.jawseanjaw0816.workers.dev/";
 
@@ -154,7 +153,6 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-
     const text = input.value.trim();
     if (!text) return;
 
@@ -167,13 +165,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "AI 요청에 실패했습니다.");
-      }
-
+      if (!response.ok) throw new Error(data.error || "AI 요청 실패");
       addMessage(data.reply, "bot");
     } catch (error) {
       addMessage(`오류: ${error.message}`, "bot");
