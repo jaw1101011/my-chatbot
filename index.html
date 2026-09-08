@@ -3,21 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>나만의 챗봇</title>
+  <title>루미</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #ffffff;
-      color: #1f1f1f;
+      color: #202123;
+      background: white;
     }
 
-    .app {
+    button, input { font: inherit; }
+    .hidden { display: none !important; }
+
+    #auth-view {
+      width: min(400px, calc(100% - 40px));
+      margin: 100px auto;
+      padding: 28px;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+    }
+
+    #auth-view input {
+      width: 100%;
+      margin: 6px 0;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .auth-buttons button {
+      flex: 1;
+      padding: 11px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #sign-in { color: white; background: #202123; }
+    #sign-up { background: #ececf1; }
+    #auth-status { color: #b42318; }
+
+    #app {
       display: flex;
       height: 100vh;
     }
@@ -25,18 +60,26 @@
     aside {
       width: 260px;
       padding: 12px;
+      overflow-y: auto;
       background: #f7f7f8;
-      border-right: 1px solid #e5e5e5;
+      border-right: 1px solid #ddd;
     }
 
-    #new-chat {
+    aside button {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #d9d9d9;
+      margin-bottom: 8px;
+      padding: 11px;
+      border: 1px solid #ddd;
       border-radius: 8px;
       background: white;
-      font-size: 14px;
       cursor: pointer;
+    }
+
+    .conversation-button {
+      overflow: hidden;
+      text-align: left;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .chat {
@@ -49,7 +92,7 @@
     header {
       padding: 18px 24px;
       font-weight: bold;
-      border-bottom: 1px solid #eeeeee;
+      border-bottom: 1px solid #eee;
     }
 
     #message-list {
@@ -73,11 +116,11 @@
 
     .user {
       margin-left: auto;
-      border-radius: 10px;
       background: #e9eefc;
+      border-radius: 10px;
     }
 
-    form {
+    #chat-form {
       display: flex;
       gap: 10px;
       width: min(760px, calc(100% - 48px));
@@ -85,98 +128,284 @@
       padding: 16px 0 24px;
     }
 
-    input {
+    #user-input {
       flex: 1;
       min-width: 0;
       padding: 14px 16px;
-      border: 1px solid #d9d9d9;
+      border: 1px solid #ccc;
       border-radius: 10px;
-      font: inherit;
       outline: none;
     }
 
-    input:focus {
-      border-color: #777;
-    }
-
-    button[type="submit"] {
+    #chat-form button {
       padding: 0 18px;
       border: 0;
       border-radius: 10px;
-      background: #1f1f1f;
       color: white;
+      background: #202123;
       cursor: pointer;
     }
 
     @media (max-width: 650px) {
-      aside {
-        display: none;
-      }
+      aside { width: 150px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
+  <section id="auth-view">
+    <h1>루미</h1>
+    <p>로그인하면 대화가 계정에 저장됩니다.</p>
+
+    <input id="email" type="email" placeholder="이메일">
+    <input id="password" type="password" placeholder="비밀번호">
+
+    <div class="auth-buttons">
+      <button id="sign-in">로그인</button>
+      <button id="sign-up">가입</button>
+    </div>
+
+    <p id="auth-status"></p>
+  </section>
+
+  <div id="app" class="hidden">
     <aside>
       <button id="new-chat">+ 새 대화</button>
+      <button id="logout">로그아웃</button>
+      <div id="conversation-list"></div>
     </aside>
 
     <section class="chat">
-      <header>나만의 AI 챗봇</header>
+      <header>루미</header>
 
-      <main id="message-list">
-        <div class="message bot">안녕하세요. 무엇을 도와드릴까요?</div>
-      </main>
+      <main id="message-list"></main>
 
       <form id="chat-form">
-        <input id="user-input" type="text" placeholder="메시지를 입력하세요" autocomplete="off">
+        <input id="user-input" type="text"
+               placeholder="메시지를 입력하세요" autocomplete="off">
         <button type="submit">전송</button>
       </form>
     </section>
   </div>
-<script>
-  const API_URL = "https://my-chatbot-api.jawseanjaw0816.workers.dev/";
 
-  const form = document.querySelector("#chat-form");
-  const input = document.querySelector("#user-input");
-  const messageList = document.querySelector("#message-list");
-  const newChatButton = document.querySelector("#new-chat");
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  function addMessage(text, role) {
-    const message = document.createElement("div");
-    message.className = `message ${role}`;
-    message.textContent = text;
-    messageList.appendChild(message);
-    messageList.scrollTop = messageList.scrollHeight;
-  }
+  <script>
+    const SUPABASE_URL =
+      "https://uhqysvsfrptkztsavmrv.supabase.co";
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const text = input.value.trim();
-    if (!text) return;
+    const SUPABASE_KEY =
+      "sb_publishable_YuD2gQxt7DaymTm7mHTc0w_yhH3ApFS";
 
-    addMessage(text, "user");
-    input.value = "";
+    const API_URL =
+      "https://my-chatbot-api.jawseanjaw0816.workers.dev/";
 
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "AI 요청 실패");
-      addMessage(data.reply, "bot");
-    } catch (error) {
-      addMessage(`오류: ${error.message}`, "bot");
+    const db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const authView = document.querySelector("#auth-view");
+    const app = document.querySelector("#app");
+    const authStatus = document.querySelector("#auth-status");
+    const emailInput = document.querySelector("#email");
+    const passwordInput = document.querySelector("#password");
+    const messageList = document.querySelector("#message-list");
+    const conversationList =
+      document.querySelector("#conversation-list");
+    const form = document.querySelector("#chat-form");
+    const input = document.querySelector("#user-input");
+
+    let currentConversationId = null;
+    let currentMessages = [];
+
+    function addMessage(text, role) {
+      const element = document.createElement("div");
+      element.className =
+        `message ${role === "assistant" ? "bot" : "user"}`;
+      element.textContent = text;
+      messageList.appendChild(element);
+      messageList.scrollTop = messageList.scrollHeight;
     }
-  });
 
-  newChatButton.addEventListener("click", () => {
-    messageList.innerHTML = "";
-    addMessage("안녕하세요. 무엇을 도와드릴까요?", "bot");
-  });
-</script>
+    async function refreshConversations() {
+      const { data, error } = await db
+        .from("conversations")
+        .select("id, title")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      conversationList.innerHTML = "";
+
+      for (const conversation of data) {
+        const button = document.createElement("button");
+        button.className = "conversation-button";
+        button.textContent = conversation.title;
+        button.onclick = () => openConversation(conversation.id);
+        conversationList.appendChild(button);
+      }
+
+      return data;
+    }
+
+    async function createConversation() {
+      const { data: sessionData } = await db.auth.getSession();
+      const user = sessionData.session.user;
+
+      const { data, error } = await db
+        .from("conversations")
+        .insert({ user_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await refreshConversations();
+      await openConversation(data.id);
+    }
+
+    async function openConversation(id) {
+      currentConversationId = id;
+
+      const { data, error } = await db
+        .from("messages")
+        .select("role, content")
+        .eq("conversation_id", id)
+        .order("created_at");
+
+      if (error) throw error;
+
+      currentMessages = data;
+      messageList.innerHTML = "";
+
+      if (data.length === 0) {
+        addMessage("안녕하세요. 무엇을 이야기할까요?", "assistant");
+      } else {
+        for (const message of data) {
+          addMessage(message.content, message.role);
+        }
+      }
+    }
+
+    async function startApp() {
+      authView.classList.add("hidden");
+      app.classList.remove("hidden");
+
+      const conversations = await refreshConversations();
+
+      if (conversations.length === 0) {
+        await createConversation();
+      } else {
+        await openConversation(conversations[0].id);
+      }
+    }
+
+    document.querySelector("#sign-up").onclick = async () => {
+      authStatus.textContent = "";
+
+      const { error } = await db.auth.signUp({
+        email: emailInput.value,
+        password: passwordInput.value,
+        options: {
+          emailRedirectTo:
+            "https://jaw1101011.github.io/my-chatbot/"
+        }
+      });
+
+      authStatus.textContent = error
+        ? error.message
+        : "확인 이메일을 보냈습니다.";
+    };
+
+    document.querySelector("#sign-in").onclick = async () => {
+      authStatus.textContent = "";
+
+      const { error } = await db.auth.signInWithPassword({
+        email: emailInput.value,
+        password: passwordInput.value
+      });
+
+      if (error) authStatus.textContent = error.message;
+    };
+
+    document.querySelector("#logout").onclick = async () => {
+      await db.auth.signOut();
+      location.reload();
+    };
+
+    document.querySelector("#new-chat").onclick =
+      createConversation;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const text = input.value.trim();
+      if (!text || !currentConversationId) return;
+
+      input.value = "";
+      addMessage(text, "user");
+      currentMessages.push({ role: "user", content: text });
+
+      try {
+        const { error: saveError } = await db
+          .from("messages")
+          .insert({
+            conversation_id: currentConversationId,
+            role: "user",
+            content: text
+          });
+
+        if (saveError) throw saveError;
+
+        const { data: sessionData } = await db.auth.getSession();
+
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization":
+              `Bearer ${sessionData.session.access_token}`
+          },
+          body: JSON.stringify({
+            messages: currentMessages.slice(-20)
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "AI 요청 실패");
+        }
+
+        addMessage(result.reply, "assistant");
+        currentMessages.push({
+          role: "assistant",
+          content: result.reply
+        });
+
+        const { error: replySaveError } = await db
+          .from("messages")
+          .insert({
+            conversation_id: currentConversationId,
+            role: "assistant",
+            content: result.reply
+          });
+
+        if (replySaveError) throw replySaveError;
+      } catch (error) {
+        addMessage(`오류: ${error.message}`, "assistant");
+      }
+    });
+
+    db.auth.onAuthStateChange((_event, session) => {
+      if (session) startApp();
+    });
+
+    (async () => {
+      const { data } = await db.auth.getSession();
+      if (data.session) startApp();
+    })();
+  </script>
 </body>
 </html>
