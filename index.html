@@ -137,37 +137,55 @@
   </div>
 
   <script>
-    const form = document.querySelector("#chat-form");
-    const input = document.querySelector("#user-input");
-    const messageList = document.querySelector("#message-list");
-    const newChatButton = document.querySelector("#new-chat");
+<script>
+  const API_URL = "https://my-chatbot-api.jawseanjaw0816.workers.dev/";
 
-    function addMessage(text, role) {
-      const message = document.createElement("div");
-      message.className = `message ${role}`;
-      message.textContent = text;
-      messageList.appendChild(message);
-      messageList.scrollTop = messageList.scrollHeight;
+  const form = document.querySelector("#chat-form");
+  const input = document.querySelector("#user-input");
+  const messageList = document.querySelector("#message-list");
+  const newChatButton = document.querySelector("#new-chat");
+
+  function addMessage(text, role) {
+    const message = document.createElement("div");
+    message.className = `message ${role}`;
+    message.textContent = text;
+    messageList.appendChild(message);
+    messageList.scrollTop = messageList.scrollHeight;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "AI 요청에 실패했습니다.");
+      }
+
+      addMessage(data.reply, "bot");
+    } catch (error) {
+      addMessage(`오류: ${error.message}`, "bot");
     }
+  });
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      const text = input.value.trim();
-      if (!text) return;
-
-      addMessage(text, "user");
-      input.value = "";
-
-      setTimeout(() => {
-        addMessage("아직 AI를 연결하기 전이에요. 다음 단계에서 실제 모델과 연결합니다.", "bot");
-      }, 400);
-    });
-
-    newChatButton.addEventListener("click", () => {
-      messageList.innerHTML = "";
-      addMessage("안녕하세요. 무엇을 도와드릴까요?", "bot");
-    });
+  newChatButton.addEventListener("click", () => {
+    messageList.innerHTML = "";
+    addMessage("안녕하세요. 무엇을 도와드릴까요?", "bot");
+  });
+</script>
   </script>
 </body>
 </html>
