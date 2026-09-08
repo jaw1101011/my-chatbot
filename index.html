@@ -3,9 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>나만의 챗봇</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    background: #f4f6fb;
+  }
+    header {
+    padding: 16px;
+    font-weight: bold;
+    background: white;
+    border-bottom: 1px solid #ddd;
+  }
+  </style>
 </head>
 <body>
-  <h1>나마니먀챗뽇</h1>
-  <p>대화할거임ㅁㅁ</p>
+  <header>나만의 AI 챗봇</header>
+
+  <main id="chat-log"></main>
+
+  <form id="chat-form">
+    <input id="user-input" type="text" placeholder="메시지를 입력하세요">
+    <button type="submit">보내기</button>
+  </form>
 </body>
 </html>
