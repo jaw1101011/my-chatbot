@@ -377,7 +377,7 @@
               `Bearer ${sessionData.session.access_token}`
           },
           body: JSON.stringify({
-            messages: currentMessages.slice(-20)
+            messages: currentMessages.slice(-100)
           })
         });
 
