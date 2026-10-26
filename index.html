@@ -157,45 +157,93 @@
     background: #feeceb;
     }
   </style>
+  <meta name="theme-color" content="#f8f9f6">
+  <link rel="stylesheet" href="display.css?v=2">
+  <script src="display.js?v=2" defer></script>
 </head>
 
 <body>
   <section id="auth-view">
-    <h1>루미</h1>
-    <p>로그인하면 대화가 계정에 저장됩니다.</p>
+    <div class="auth-top"><span class="wordmark">✳ lumi</span><button class="quiet-button" data-open-settings type="button">화면 설정</button></div>
+    <div class="auth-symbol" aria-hidden="true">✳</div>
+    <p class="eyebrow">YOUR EVERYDAY COMPANION</p>
+    <h1>생각이 머무는 곳,<br>루미.</h1>
+    <p class="auth-description">작은 궁금증부터 길게 나누고 싶은 이야기까지.<br>로그인하면 지난 대화에서 다시 이어갈 수 있어요.</p>
 
-    <input id="email" type="email" placeholder="이메일">
-    <input id="password" type="password" placeholder="비밀번호">
+    <label class="input-label" for="email">이메일</label>
+    <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+    <label class="input-label" for="password">비밀번호</label>
+    <input id="password" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
 
     <div class="auth-buttons">
       <button id="sign-in">로그인</button>
-      <button id="sign-up">가입</button>
+      <button id="sign-up">회원가입</button>
     </div>
 
-    <p id="auth-status"></p>
+    <p id="auth-status" role="status"></p>
+    <p class="auth-footnote">대화는 기존 Supabase 계정에 저장돼요.</p>
   </section>
 
   <div id="app" class="hidden">
-    <aside>
-      <button id="new-chat">+ 새 대화</button>
-      <button id="logout">로그아웃</button>
-      <button id="delete-chat" class="danger">현재 대화 삭제</button>
-      <button id="delete-all" class="danger">전체 대화 삭제</button>
-      <div id="conversation-list"></div>
+    <aside id="sidebar" aria-label="대화 목록">
+      <div class="sidebar-brand"><span class="wordmark">✳ lumi</span><button id="close-sidebar" class="icon-button mobile-only" aria-label="대화 목록 닫기">×</button></div>
+      <button id="new-chat"><span aria-hidden="true">＋</span> 새로운 대화</button>
+      <p class="sidebar-label">내 대화</p>
+      <div id="conversation-list" aria-label="저장된 대화"></div>
+      <div class="sidebar-footer">
+        <button data-open-settings class="sidebar-setting">☷ <span>디스플레이 설정</span></button>
+        <details class="data-menu"><summary>대화 관리</summary>
+          <button id="delete-chat" class="danger">현재 대화 삭제</button>
+          <button id="delete-all" class="danger">전체 대화 삭제</button>
+        </details>
+        <button id="logout">로그아웃 <span aria-hidden="true">↗</span></button>
+        <span class="sidebar-caption">나만의 속도로, 루미와 함께.</span>
+      </div>
     </aside>
 
     <section class="chat">
-      <header>루미</header>
+      <header class="chat-header">
+        <div class="header-left"><button id="open-sidebar" class="icon-button mobile-only" aria-label="대화 목록 열기" aria-controls="sidebar" aria-expanded="false">☰</button><div><span class="header-title">루미</span><span class="header-subtitle">나만의 대화 공간</span></div></div>
+        <button data-open-settings class="quiet-button" type="button"><span aria-hidden="true">☷</span> 화면 설정</button>
+      </header>
 
-      <main id="message-list"></main>
+      <main id="message-list" aria-label="대화 내용" aria-live="polite" aria-relevant="additions"></main>
 
       <form id="chat-form">
         <input id="user-input" type="text"
                placeholder="메시지를 입력하세요" autocomplete="off">
-        <button type="submit">전송</button>
+        <button type="submit" aria-label="메시지 전송">↑</button>
       </form>
+      <p class="composer-note">루미도 실수할 수 있어요. 중요한 정보는 한 번 더 확인해 주세요.</p>
     </section>
   </div>
+  <button id="sidebar-backdrop" class="hidden" aria-label="대화 목록 닫기" tabindex="-1"></button>
+
+  <dialog id="display-settings" aria-labelledby="settings-title">
+    <div class="settings-heading"><div><p class="eyebrow">MAKE IT YOURS</p><h2 id="settings-title">디스플레이 설정</h2></div><button id="close-settings" class="icon-button" aria-label="설정 닫기">×</button></div>
+    <p class="settings-description">지금 편안한 화면으로 맞춰 보세요.</p>
+    <form id="display-form">
+      <fieldset><legend>화면 테마</legend><div class="theme-options">
+        <label><input type="radio" name="theme" value="light"><span class="theme-card"><span class="theme-preview preview-light" aria-hidden="true"></span>라이트</span></label>
+        <label><input type="radio" name="theme" value="dark"><span class="theme-card"><span class="theme-preview preview-dark" aria-hidden="true"></span>다크</span></label>
+        <label><input type="radio" name="theme" value="system"><span class="theme-card"><span class="theme-preview preview-system" aria-hidden="true"></span>시스템</span></label>
+      </div></fieldset>
+      <fieldset><legend>포인트 색상</legend><div class="accent-options">
+        <label title="세이지"><input type="radio" name="accent" value="sage"><span style="--swatch:#38745d">세이지</span></label>
+        <label title="라벤더"><input type="radio" name="accent" value="lavender"><span style="--swatch:#7460aa">라벤더</span></label>
+        <label title="블루"><input type="radio" name="accent" value="blue"><span style="--swatch:#3f6fac">블루</span></label>
+        <label title="로즈"><input type="radio" name="accent" value="rose"><span style="--swatch:#a15370">로즈</span></label>
+      </div></fieldset>
+      <div class="setting-row"><label for="font-size">글자 크기 <output id="font-size-value" for="font-size">16px</output></label><input id="font-size" name="fontSize" type="range" min="14" max="22" step="1"></div>
+      <div class="setting-row"><label for="chat-width">대화 폭</label><select id="chat-width" name="width"><option value="narrow">아늑하게 · 640px</option><option value="comfortable">편안하게 · 800px</option><option value="wide">넓게 · 1040px</option></select></div>
+      <div class="setting-row"><label for="chat-spacing">말풍선 간격</label><select id="chat-spacing" name="spacing"><option value="compact">촘촘하게</option><option value="comfortable">기본</option><option value="relaxed">여유롭게</option></select></div>
+      <div class="setting-row"><label for="reduce-motion">움직임 줄이기</label><input id="reduce-motion" name="reduceMotion" type="checkbox" class="switch"></div>
+      <div class="settings-preview"><span class="preview-caption">미리 보기</span><p>오늘은 어떤 이야기를 나눠 볼까요? ✳</p></div>
+      <p id="settings-storage-note" class="settings-note">변경 즉시 적용되며 이 브라우저에 저장돼요. 대화 기록에는 영향을 주지 않아요.</p>
+      <div class="settings-bottom"><button id="reset-display" class="quiet-button" type="button">기본값으로</button><button id="done-settings" class="primary-button" type="button">완료</button></div>
+    </form>
+    <div class="project-link"><span>연결된 프로젝트</span><a href="https://supabase.com/dashboard/project/uhqysvsfrptkztsavmrv" target="_blank" rel="noopener noreferrer">Supabase 관리 화면 ↗</a></div>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
