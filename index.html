@@ -434,7 +434,9 @@
         if (!response.ok) {
           throw new Error(result.error || "AI 요청 실패");
         }
-
+        if (typeof result.reply !== "string" || !result.reply.trim()) {
+          throw new Error("AI 서버에서 답변 텍스트를 받지 못했습니다.");
+        }
         addMessage(result.reply, "assistant");
         currentMessages.push({
           role: "assistant",
