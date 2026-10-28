@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const storageKey = 'lumi.display.v1';
-  const defaults = { theme: 'system', accent: 'sage', fontSize: 16, width: 'comfortable', spacing: 'comfortable', reduceMotion: false, customColors: { light: {}, dark: {} } };
+  const defaults = { theme: 'system', accent: 'sage', fontSize: 16, width: 'comfortable', spacing: 'comfortable', reduceMotion: false, colorHearts: false, customColors: { light: {}, dark: {} } };
   const colorFields = [
     ['page','전체 배경','--page'], ['surface','설정창·카드 배경','--surface'],
     ['sidebar','사이드바 배경','--sidebar'], ['ink','기본 글자','--ink'],
@@ -10,7 +10,7 @@
     ['botBg','루미 말풍선','--bot-bg'], ['botText','루미 글자','--bot-text'],
     ['userBg','내 말풍선','--user-bg'], ['userText','내 글자','--user-text'],
     ['inputBg','입력창 배경','--input-bg'], ['accent','버튼·포인트','--accent'],
-    ['accentInk','버튼 글자','--accent-ink']
+    ['accentInk','버튼 글자','--accent-ink'], ['icon','하트·아이콘','--icon']
   ];
   const validHex = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
   const emptyColors = () => ({light: {}, dark: {}});
@@ -64,11 +64,24 @@
   const sample = document.createElement('div');
   sample.className = 'color-chat-preview';
   const botSample = document.createElement('p'); botSample.className = 'color-preview-bot';
-  botSample.textContent = '루미 · 오늘은 어떤 이야기를 나눌까요?';
+  botSample.textContent = '루미 · 오늘은 어떤 이야기를 나눌까요? ❤️ 💗 💜';
   const userSample = document.createElement('p'); userSample.className = 'color-preview-user';
   userSample.textContent = '나 · 내 취향에 맞게 꾸며 봤어!';
   sample.append(botSample,userSample);
   settingsForm.querySelector('.settings-preview').appendChild(sample);
+  const heartOption = document.createElement('div');
+  heartOption.className = 'setting-row heart-setting';
+  const heartLabel = document.createElement('label');
+  heartLabel.htmlFor = 'color-hearts'; heartLabel.textContent = '대화 속 하트 색상 통일';
+  const heartToggle = document.createElement('input');
+  heartToggle.id = 'color-hearts'; heartToggle.name = 'colorHearts';
+  heartToggle.type = 'checkbox'; heartToggle.className = 'switch';
+  heartToggle.setAttribute('aria-describedby','heart-color-note');
+  heartOption.append(heartLabel,heartToggle);
+  const heartNote = document.createElement('p');
+  heartNote.id = 'heart-color-note'; heartNote.className = 'settings-note';
+  heartNote.textContent = '켜면 대화 속 하트 이모지를 단색 하트로 표시해요. 하트·아이콘 색상은 기본적으로 포인트 색상을 따라가요. 다른 컬러 이모지는 그대로이며, 저장된 대화 원문은 바뀌지 않아요.';
+  colorPanel.append(heartOption,heartNote);
   let settings = { ...defaults };
   let lastTrigger;
   function sanitize(value) {
@@ -85,6 +98,7 @@
       width: Object.hasOwn(widths,v.width) ? v.width : defaults.width,
       spacing: Object.hasOwn(spacings,v.spacing) ? v.spacing : defaults.spacing,
       reduceMotion: v.reduceMotion === true,
+      colorHearts: v.colorHearts === true,
       customColors
     };
   }
@@ -95,6 +109,7 @@
     colorFields.forEach(([, ,property]) => root.style.removeProperty(property));
     root.dataset.theme = theme;
     root.dataset.reduceMotion = String(settings.reduceMotion);
+    root.dataset.colorHearts = String(settings.colorHearts);
     const palette = palettes[settings.accent][theme];
     ['--accent','--accent-soft','--accent-ink'].forEach((key,i) => root.style.setProperty(key,palette[i]));
     root.style.setProperty('--chat-font',`${settings.fontSize}px`);
@@ -108,6 +123,40 @@
     document.querySelector('meta[name="theme-color"]').content = getComputedStyle(root).getPropertyValue('--page').trim();
     document.querySelector('#font-size-value').value = `${settings.fontSize}px`;
     updateContrastNote();
+    syncHearts();
+  }
+  // Only decorate rendered text. The API payload and Supabase records stay untouched.
+  const heartPattern = /(?<!\u200D)[♥♡❤❣💓💔💕💖💗💘💙💚💛💜💝💞🖤🤍🤎🩷🩵🩶][\uFE0E\uFE0F]?(?:\u200D(?:🔥|🩹))?(?![\uFE0E\uFE0F\u200D])/gu;
+  function decorateHearts(container) {
+    const walker = document.createTreeWalker(container,NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.parentElement?.closest('.lumi-heart')) continue;
+      heartPattern.lastIndex = 0;
+      if (heartPattern.test(node.nodeValue)) nodes.push(node);
+    }
+    for (const node of nodes) {
+      const fragment = document.createDocumentFragment();
+      let cursor = 0;
+      for (const match of node.nodeValue.matchAll(heartPatternFromStart())) {
+        fragment.append(document.createTextNode(node.nodeValue.slice(cursor,match.index)));
+        const heart = document.createElement('span');
+        heart.className = 'lumi-heart'; heart.textContent = match[0];
+        heart.title = `${match[0]} · 원래 하트`; heart.setAttribute('role','img');
+        heart.setAttribute('aria-label',match[0]);
+        fragment.appendChild(heart); cursor = match.index + match[0].length;
+      }
+      fragment.append(document.createTextNode(node.nodeValue.slice(cursor)));
+      node.replaceWith(fragment);
+    }
+  }
+  function heartPatternFromStart() { return new RegExp(heartPattern.source,'gu'); }
+  function syncHearts() {
+    for (const container of document.querySelectorAll('#message-list,.color-chat-preview')) {
+      if (settings.colorHearts) decorateHearts(container);
+      else container.querySelectorAll('.lumi-heart').forEach(heart => heart.replaceWith(document.createTextNode(heart.textContent)));
+    }
   }
   function cssHex(property) {
     const probe = document.createElement('span');
@@ -152,6 +201,7 @@
     settingsForm.elements.width.value = settings.width;
     settingsForm.elements.spacing.value = settings.spacing;
     settingsForm.elements.reduceMotion.checked = settings.reduceMotion;
+    heartToggle.checked = settings.colorHearts;
     syncColorControls();
   }
   function save() {
@@ -160,14 +210,15 @@
   }
   settingsForm.addEventListener('submit',event => event.preventDefault());
   settingsForm.addEventListener('input',event => {
-    if (colorPanel.contains(event.target)) return;
+    if (colorPanel.contains(event.target) && event.target !== heartToggle) return;
     if (event.target.name === 'accent') {
       delete settings.customColors[resolvedTheme()].accent;
       delete settings.customColors[resolvedTheme()].accentInk;
     }
     settings = sanitize({ ...settings, theme: settingsForm.elements.theme.value, accent: settingsForm.elements.accent.value,
       fontSize: Number(settingsForm.elements.fontSize.value), width: settingsForm.elements.width.value,
-      spacing: settingsForm.elements.spacing.value, reduceMotion: settingsForm.elements.reduceMotion.checked });
+      spacing: settingsForm.elements.spacing.value, reduceMotion: settingsForm.elements.reduceMotion.checked,
+      colorHearts: heartToggle.checked });
     apply(); syncColorControls(); save();
   });
   document.querySelectorAll('[data-open-settings]').forEach(button => button.addEventListener('click',() => {
@@ -209,4 +260,18 @@
   });
   document.querySelector('#new-chat').addEventListener('click',() => setSidebar(false));
   apply(); syncControls();
+  const messageObserver = new MutationObserver(records => {
+    if (!settings.colorHearts) return;
+    const containers = new Set();
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+        if (element?.closest('.lumi-heart')) continue;
+        const message = element?.closest('.message');
+        if (message) containers.add(message);
+      }
+    }
+    containers.forEach(decorateHearts);
+  });
+  messageObserver.observe(document.querySelector('#message-list'),{childList:true,subtree:true});
 })();

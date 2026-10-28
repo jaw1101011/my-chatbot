@@ -7,6 +7,7 @@
   --shadow: 0 12px 50px #20352a0c;
   --bot-bg: transparent; --bot-text: var(--ink);
   --user-bg: var(--accent-soft); --user-text: var(--ink); --input-bg: var(--surface);
+  --icon: var(--accent);
 }
 :root[data-theme="dark"] {
   color-scheme: dark; --page: #1b201e; --surface: #232a26; --sidebar: #161b18;
@@ -131,6 +132,12 @@ input:checked + .theme-card { border-color: var(--accent); color: var(--accent);
 .settings-preview .color-chat-preview p { border-radius: 10px; padding: 10px 12px; font-size: var(--chat-font); overflow-wrap: anywhere; }
 .color-preview-bot { color: var(--bot-text); background: var(--bot-bg); }
 .color-preview-user { color: var(--user-text); background: var(--user-bg); margin-left: 20px !important; }
+.wordmark,.auth-symbol,.bot::before,#new-chat span,.lumi-icon { color: var(--icon); }
+.icon-button { color: var(--icon); }
+#sidebar #close-sidebar { color: var(--icon); }
+.heart-setting { margin: 22px 0 8px; }
+.lumi-heart { display: inline-block; width: 1.1em; height: 1em; position: relative; color: transparent; vertical-align: -.1em; white-space: nowrap; }
+.lumi-heart::after { content: ""; position: absolute; inset: 0; background: var(--icon); mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-9-5.5-9-12A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 6.5-9 12-9 12Z'/%3E%3C/svg%3E") center / contain no-repeat; }
 @media (max-width: 420px) { .custom-color-grid { grid-template-columns: 1fr; } }
 @media (min-width: 1600px) { #sidebar { width: 290px; } }
 @media (max-width: 760px) {
